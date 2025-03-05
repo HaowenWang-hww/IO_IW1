@@ -1,66 +1,47 @@
-# ---------------------------------------------------------------------------------------------
-# File: housekeeping.R
-# By: YOUR NAME HERE
-# Date: Today's Date
-# Description: This file installs and loads packages. It also defines the file paths. Run it 
-# before running any other files. In fact, include it all files you run.
-# ---------------------------------------------------------------------------------------------
+# Run housekeeping script to set up directories
+source("housekeeping.R")  
 
-# Include any other folders you may want
+# Load necessary libraries
+library(dplyr)
+library(readr)
 
-# Install packages
-#install.packages("tidycensus")
-#install.packages("tidyverse")
-#install.packages("sf")
-#install.packages("Himsc")
-#install.packages("knitr")
-#install.packages("viridis")
-#install.packages("tidygeocoder")
-#install.packages("rvest")
+# Define the full file path using raw_dir from housekeeping
+IP1_original <- file.path(raw_dir, "IP1_original.csv")
 
-library(tidycensus)
-library(tidyverse)
-library(sf)
-library(Hmisc)  # For weighted variance function
-library(knitr)  # For table output
-library(viridis) # Changes colors of graphs
-library(tidygeocoder)
-library(rvest)
+# Check if file exists before proceeding
+if (!file.exists(file_path)) {
+  stop("Error: The file 'IP1_original.csv' was not found in the directory.")
+}
 
-# Directory objects
+# Load the dataset
+data <- read_csv(IP1_original)
 
-# Create directories
-data_dir <- 'data'
-raw_dir <- file.path(data_dir,'raw')
-work_dir <- file.path(data_dir,'work')
-output_dir <- 'output'
-code_dir <- 'code'
-build_dir <- file.path(code_dir,'build')
-analysis_dir <- file.path(code_dir,'analysis')
-documentation_dir <- 'documentation'
-literature_dir <-'literature'
+# Select key financial variables
+key_vars <- data %>%
+  select(gvkey, datadate, fyearq, fqtr, tic, conm, 
+         cogsq, epsfxq, finxoprq, oiadpq, revtq, oibdpy)
 
-# Create directories
-suppressWarnings({
-  dir.create(data_dir)
-  dir.create(raw_dir)
-  dir.create(work_dir)
-  dir.create(documentation_dir)
-  dir.create(code_dir)
-  dir.create(build_dir)
-  dir.create(analysis_dir)
-  dir.create(literature_dir)
-  dir.create(output_dir)
-})
+# Convert `datadate` to Date format
+key_vars <- key_vars %>%
+  mutate(datadate = as.Date(datadate, format = "%Y-%m-%d"))
 
+# Summary statistics for key financial variables
+summary_stats <- key_vars %>%
+  summarise(
+    count = n(),
+    mean_revenue = mean(revtq, na.rm = TRUE),
+    median_revenue = median(revtq, na.rm = TRUE),
+    sd_revenue = sd(revtq, na.rm = TRUE),
+    min_revenue = min(revtq, na.rm = TRUE),
+    max_revenue = max(revtq, na.rm = TRUE),
+    
+    mean_operating_income = mean(oiadpq, na.rm = TRUE),
+    mean_cogs = mean(cogsq, na.rm = TRUE),
+    mean_eps = mean(epsfxq, na.rm = TRUE),
+    
+    mean_fin_expense = mean(finxoprq, na.rm = TRUE),
+    mean_operating_profit = mean(oibdpy, na.rm = TRUE)
+  )
 
-# Create .placeholder's in each folder, these ensure that the folders are included in the git repository
-# Git does not track empty folders, so we need to create a file in each folder to ensure that the folder
-# is pushed
-
-suppressWarnings({
-  for (dir in c(raw_dir,work_dir,build_dir,analysis_dir,documentation_dir,literature_dir)){
-    # If file created, it prints "TRUE"
-    file.create(file.path(dir,'.placeholder'),
-      showWarnings=FALSE)}
-})
+# Display the summary statistics
+print(summary_stats)
