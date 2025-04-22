@@ -26,6 +26,11 @@ library(knitr)  # For table output
 library(viridis) # Changes colors of graphs
 library(tidygeocoder)
 library(rvest)
+library(lubridate)
+library(broom)
+library(tidyquant)
+library(forecast)
+library(ggrepel)
 
 # Directory objects
 
